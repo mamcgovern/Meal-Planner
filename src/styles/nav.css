@@ -1,0 +1,37 @@
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 1.25rem 5%;
+  background-color: var(--primary);
+}
+
+.site-title {
+  color: white;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 2rem;
+  text-decoration: none;
+}
+
+nav {
+  display: flex;
+  gap: 1.5rem;
+}
+
+nav a {
+  color: white;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+nav a:hover,
+nav a.active {
+  text-decoration: underline;
+  text-underline-offset: 0.4rem;
+}
+
+main {
+  width: min(1100px, 90%);
+  margin: 3rem auto;
+}

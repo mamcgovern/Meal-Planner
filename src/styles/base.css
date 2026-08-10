@@ -1,0 +1,53 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap");
+
+:root {
+  --text: #000000;
+  --background: #fffefd;
+
+  --primary: #ce4257;
+  --primary-light: #e7a1ab;
+  --primary-dark: #9b3242;
+
+  --secondary: #ff9b54;
+  --secondary-light: #ffb47f;
+  --secondary-dark: #c0753f;
+
+  --accent: #a3e7fc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--background);
+  color: var(--text);
+  font-family: "Raleway", sans-serif;
+  font-style: normal;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin-top: 0;
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+h1 {
+  font-size: 3rem;
+}
