@@ -64,3 +64,12 @@ main {
 .page-heading h1 {
   margin-bottom: 0.25rem;
 }
+
+.error-message {
+  padding: 1rem;
+  border-left: 4px solid var(--primary-dark);
+  border-radius: 0.5rem;
+  background-color: var(--primary-light);
+  color: var(--primary-dark);
+  font-weight: 600;
+}

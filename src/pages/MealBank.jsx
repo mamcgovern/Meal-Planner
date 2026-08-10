@@ -1,194 +1,262 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import {
+    addDoc,
+    collection,
+    onSnapshot,
+    orderBy,
+    query,
+    serverTimestamp,
+} from "firebase/firestore"
+import { db } from "../firebase"
 
 function createIngredient() {
-  return {
-    id: crypto.randomUUID(),
-    name: "",
-    quantity: "",
-    unit: "",
-  }
+    return {
+        id: crypto.randomUUID(),
+        name: "",
+        quantity: "",
+        unit: "",
+    }
 }
 
 function MealBank() {
-  const [mealName, setMealName] = useState("")
-  const [ingredients, setIngredients] = useState([createIngredient()])
-  const [meals, setMeals] = useState([])
+    const [mealName, setMealName] = useState("")
+    const [ingredients, setIngredients] = useState([createIngredient()])
+    const [meals, setMeals] = useState([])
+    const [isLoading, setIsLoading] = useState(true)
+    const [isSaving, setIsSaving] = useState(false)
+    const [error, setError] = useState("")
 
-  function handleIngredientChange(id, field, value) {
-    setIngredients((currentIngredients) =>
-      currentIngredients.map((ingredient) =>
-        ingredient.id === id
-          ? { ...ingredient, [field]: value }
-          : ingredient
-      )
-    )
-  }
+    useEffect(() => {
+        const mealsQuery = query(
+            collection(db, "meals"),
+            orderBy("name")
+        )
 
-  function addIngredient() {
-    setIngredients((currentIngredients) => [
-      ...currentIngredients,
-      createIngredient(),
-    ])
-  }
+        const unsubscribe = onSnapshot(
+            mealsQuery,
+            (snapshot) => {
+                const savedMeals = snapshot.docs.map((document) => ({
+                    id: document.id,
+                    ...document.data(),
+                }))
 
-  function removeIngredient(id) {
-    setIngredients((currentIngredients) =>
-      currentIngredients.filter((ingredient) => ingredient.id !== id)
-    )
-  }
+                setMeals(savedMeals)
+                setIsLoading(false)
+            },
+            (firebaseError) => {
+                console.error(firebaseError)
+                setError("We couldn't load your saved meals.")
+                setIsLoading(false)
+            }
+        )
 
-  function handleSubmit(event) {
-    event.preventDefault()
+        return unsubscribe
+    }, [])
 
-    const newMeal = {
-      id: crypto.randomUUID(),
-      name: mealName,
-      ingredients,
+    function handleIngredientChange(id, field, value) {
+        setIngredients((currentIngredients) =>
+            currentIngredients.map((ingredient) =>
+                ingredient.id === id
+                    ? { ...ingredient, [field]: value }
+                    : ingredient
+            )
+        )
     }
 
-    setMeals((currentMeals) => [...currentMeals, newMeal])
+    function addIngredient() {
+        setIngredients((currentIngredients) => [
+            ...currentIngredients,
+            createIngredient(),
+        ])
+    }
 
-    setMealName("")
-    setIngredients([createIngredient()])
-  }
+    function removeIngredient(id) {
+        setIngredients((currentIngredients) =>
+            currentIngredients.filter((ingredient) => ingredient.id !== id)
+        )
+    }
 
-  return (
-    <main>
-      <section className="page-heading">
-        <h1>Meal Bank</h1>
-        <p>Save your favorite meals and everything needed to make them.</p>
-      </section>
+    async function handleSubmit(event) {
+        event.preventDefault()
 
-      <form className="meal-form" onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="meal-name">Meal name</label>
+        setIsSaving(true)
+        setError("")
 
-          <input
-            id="meal-name"
-            type="text"
-            value={mealName}
-            onChange={(event) => setMealName(event.target.value)}
-            placeholder="Chicken tacos"
-            required
-          />
-        </div>
+        const cleanedIngredients = ingredients.map((ingredient) => ({
+            id: ingredient.id,
+            name: ingredient.name.trim(),
+            quantity: ingredient.quantity.trim(),
+            unit: ingredient.unit.trim(),
+        }))
 
-        <div className="ingredients-heading">
-          <h2>Ingredients</h2>
+        try {
+            await addDoc(collection(db, "meals"), {
+                name: mealName.trim(),
+                ingredients: cleanedIngredients,
+                createdAt: serverTimestamp(),
+            })
 
-          <button
-            className="button secondary-button"
-            type="button"
-            onClick={addIngredient}
-          >
-            + Add ingredient
-          </button>
-        </div>
+            setMealName("")
+            setIngredients([createIngredient()])
+        } catch (firebaseError) {
+            console.error(firebaseError)
+            setError("We couldn't save this meal. Please try again.")
+        } finally {
+            setIsSaving(false)
+        }
+    }
 
-        <div className="ingredient-list">
-          {ingredients.map((ingredient, index) => (
-            <div className="ingredient-row" key={ingredient.id}>
-              <div className="form-group ingredient-name">
-                <label htmlFor={`ingredient-${ingredient.id}`}>
-                  Ingredient {index + 1}
-                </label>
 
-                <input
-                  id={`ingredient-${ingredient.id}`}
-                  type="text"
-                  value={ingredient.name}
-                  onChange={(event) =>
-                    handleIngredientChange(
-                      ingredient.id,
-                      "name",
-                      event.target.value
-                    )
-                  }
-                  placeholder="Chicken breast"
-                  required
-                />
-              </div>
 
-              <div className="form-group">
-                <label htmlFor={`quantity-${ingredient.id}`}>Quantity</label>
+    return (
+        <main>
+            <section className="page-heading">
+                <h1>Meal Bank</h1>
+                <p>Save your favorite meals and everything needed to make them.</p>
+            </section>
 
-                <input
-                  id={`quantity-${ingredient.id}`}
-                  type="text"
-                  value={ingredient.quantity}
-                  onChange={(event) =>
-                    handleIngredientChange(
-                      ingredient.id,
-                      "quantity",
-                      event.target.value
-                    )
-                  }
-                  placeholder="1"
-                  required
-                />
-              </div>
+            {error && (
+                <p className="error-message" role="alert">
+                    {error}
+                </p>
+            )}
 
-              <div className="form-group">
-                <label htmlFor={`unit-${ingredient.id}`}>Unit</label>
+            <form className="meal-form" onSubmit={handleSubmit}>
+                <div className="form-group">
+                    <label htmlFor="meal-name">Meal name</label>
 
-                <input
-                  id={`unit-${ingredient.id}`}
-                  type="text"
-                  value={ingredient.unit}
-                  onChange={(event) =>
-                    handleIngredientChange(
-                      ingredient.id,
-                      "unit",
-                      event.target.value
-                    )
-                  }
-                  placeholder="lb"
-                />
-              </div>
+                    <input
+                        id="meal-name"
+                        type="text"
+                        value={mealName}
+                        onChange={(event) => setMealName(event.target.value)}
+                        placeholder="Chicken tacos"
+                        required
+                    />
+                </div>
 
-              <button
-                className="button button-text"
-                type="button"
-                onClick={() => removeIngredient(ingredient.id)}
-                disabled={ingredients.length === 1}
-                aria-label={`Remove ingredient ${index + 1}`}
-              >
-                Remove
-              </button>
-            </div>
-          ))}
-        </div>
+                <div className="ingredients-heading">
+                    <h2>Ingredients</h2>
 
-        <button className="button button-primary save-meal-button" type="submit">
-          Save meal
-        </button>
-      </form>
+                    <button
+                        className="button secondary-button"
+                        type="button"
+                        onClick={addIngredient}
+                    >
+                        + Add ingredient
+                    </button>
+                </div>
 
-      <section className="saved-meals">
-        <h2>Saved Meals</h2>
+                <div className="ingredient-list">
+                    {ingredients.map((ingredient, index) => (
+                        <div className="ingredient-row" key={ingredient.id}>
+                            <div className="form-group ingredient-name">
+                                <label htmlFor={`ingredient-${ingredient.id}`}>
+                                    Ingredient {index + 1}
+                                </label>
 
-        {meals.length === 0 ? (
-          <p>No meals have been saved yet.</p>
-        ) : (
-          <div className="card-grid">
-            {meals.map((meal) => (
-              <article className="card meal-card" key={meal.id}>
-                <h3>{meal.name}</h3>
+                                <input
+                                    id={`ingredient-${ingredient.id}`}
+                                    type="text"
+                                    value={ingredient.name}
+                                    onChange={(event) =>
+                                        handleIngredientChange(
+                                            ingredient.id,
+                                            "name",
+                                            event.target.value
+                                        )
+                                    }
+                                    placeholder="Chicken breast"
+                                    required
+                                />
+                            </div>
 
-                <ul>
-                  {meal.ingredients.map((ingredient) => (
-                    <li key={ingredient.id}>
-                      {ingredient.quantity} {ingredient.unit} {ingredient.name}
-                    </li>
-                  ))}
-                </ul>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
-    </main>
-  )
+                            <div className="form-group">
+                                <label htmlFor={`quantity-${ingredient.id}`}>Quantity</label>
+
+                                <input
+                                    id={`quantity-${ingredient.id}`}
+                                    type="text"
+                                    value={ingredient.quantity}
+                                    onChange={(event) =>
+                                        handleIngredientChange(
+                                            ingredient.id,
+                                            "quantity",
+                                            event.target.value
+                                        )
+                                    }
+                                    placeholder="1"
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor={`unit-${ingredient.id}`}>Unit</label>
+
+                                <input
+                                    id={`unit-${ingredient.id}`}
+                                    type="text"
+                                    value={ingredient.unit}
+                                    onChange={(event) =>
+                                        handleIngredientChange(
+                                            ingredient.id,
+                                            "unit",
+                                            event.target.value
+                                        )
+                                    }
+                                    placeholder="lb"
+                                />
+                            </div>
+
+                            <button
+                                className="button button-text"
+                                type="button"
+                                onClick={() => removeIngredient(ingredient.id)}
+                                disabled={ingredients.length === 1}
+                                aria-label={`Remove ingredient ${index + 1}`}
+                            >
+                                Remove
+                            </button>
+                        </div>
+                    ))}
+                </div>
+
+                <button
+                    className="button button-primary save-meal-button"
+                    type="submit"
+                    disabled={isSaving}
+                >
+                    {isSaving ? "Saving..." : "Save meal"}
+                </button>
+            </form>
+
+            <section className="saved-meals">
+                <h2>Saved Meals</h2>
+
+                {isLoading ? (
+                    <p>Loading meals...</p>
+                ) : meals.length === 0 ? (
+                    <p>No meals have been saved yet.</p>
+                ) : (
+                    <div className="card-grid">
+                        {meals.map((meal) => (
+                            <article className="card meal-card" key={meal.id}>
+                                <h3>{meal.name}</h3>
+
+                                <ul>
+                                    {meal.ingredients.map((ingredient) => (
+                                        <li key={ingredient.id}>
+                                            {ingredient.quantity} {ingredient.unit} {ingredient.name}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </article>
+                        ))}
+                    </div>
+                )}
+            </section>
+        </main>
+    )
 }
 
 export default MealBank
