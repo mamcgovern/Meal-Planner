@@ -1,2 +1,6 @@
 @import "./global.css";
-@import "./nav.css";
+@import "./navigation.css";
+@import "./forms.css";
+@import "./buttons.css";
+@import "./cards.css";
+@import "./meal-bank.css";

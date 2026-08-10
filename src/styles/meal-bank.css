@@ -1,0 +1,57 @@
+.meal-form {
+  padding: 2rem;
+  border: 1px solid var(--primary-light);
+  border-radius: 1rem;
+  background-color: white;
+}
+
+.ingredients-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 2rem 0 1rem;
+}
+
+.ingredients-heading h2 {
+  margin: 0;
+}
+
+.ingredient-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ingredient-row {
+  display: grid;
+  grid-template-columns: minmax(200px, 2fr) 100px 100px auto;
+  align-items: end;
+  gap: 1rem;
+}
+
+.save-meal-button {
+  margin-top: 2rem;
+}
+
+.saved-meals {
+  margin-top: 3rem;
+}
+
+.meal-card {
+  background-color: var(--primary-light);
+}
+
+.meal-card h3 {
+  font-size: 1.75rem;
+}
+
+@media (max-width: 700px) {
+  .ingredient-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .ingredient-name {
+    grid-column: 1 / -1;
+  }
+}
